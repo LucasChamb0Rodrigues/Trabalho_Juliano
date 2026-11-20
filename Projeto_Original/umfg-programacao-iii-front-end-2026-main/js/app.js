@@ -5,6 +5,8 @@
 const API_URL = "https://localhost:7063";
 
 let paginaAtual = 1;
+let ordemAtual = "DataCadastro";
+let direcaoAtual = "DESC";
 
 
 // ========================================
@@ -40,6 +42,8 @@ const btnProximo = document.getElementById("btnProximo");
 
 const tituloFormulario = document.getElementById("tituloFormulario");
 
+const botoesOrdenar = document.querySelectorAll(".btn-ordenar");
+
 
 // ========================================
 // INICIALIZAÇÃO
@@ -53,6 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
 // GET /lembretes/filtro
 // ========================================
 async function filtrarLembretes() {
+    atualizarSetasOrdenacao();
+
     try {
         const params = montarParametros();
 
@@ -68,19 +74,27 @@ async function filtrarLembretes() {
 
         const resultado = await response.json();
 
+        if (resultado.lembretes.length === 0 && paginaAtual > 1) {
+            paginaAtual--;
+            await filtrarLembretes();
+            return;
+        }
+
         renderizarLembretes(resultado.lembretes);
 
+        const totalPaginas = Math.max(1, Math.ceil(resultado.total / resultado.tamanhoPagina));
+
         totalRegistros.textContent =
-            `${resultado.total} registros`;
+            `${resultado.total} ${resultado.total === 1 ? "registro" : "registros"}`;
 
         paginaAtualElemento.textContent =
-            `Página ${resultado.numeroPagina}`;
+            `Página ${resultado.numeroPagina} de ${totalPaginas}`;
 
         btnAnterior.disabled =
             paginaAtual <= 1;
 
         btnProximo.disabled =
-            paginaAtual * resultado.tamanhoPagina >= resultado.total;
+            paginaAtual >= totalPaginas;
 
     } catch (error) {
 
@@ -447,6 +461,34 @@ btnProximo.addEventListener("click", () => {
     filtrarLembretes();
 });
 
+tamanhoPagina.addEventListener("change", () => {
+    paginaAtual = 1;
+    filtrarLembretes();
+});
+
+botoesOrdenar.forEach(botao => {
+    botao.addEventListener("click", () => {
+        if (ordemAtual === botao.dataset.ordem) {
+            direcaoAtual = direcaoAtual === "ASC" ? "DESC" : "ASC";
+        } else {
+            ordemAtual = botao.dataset.ordem;
+            direcaoAtual = "ASC";
+        }
+
+        paginaAtual = 1;
+        filtrarLembretes();
+    });
+});
+
+function atualizarSetasOrdenacao() {
+    botoesOrdenar.forEach(botao => {
+        const ativo = botao.dataset.ordem === ordemAtual;
+
+        botao.classList.toggle("ativo", ativo);
+        botao.querySelector(".seta").textContent = ativo ? (direcaoAtual === "ASC" ? "▲" : "▼") : "";
+    });
+}
+
 
 // ========================================
 // UTILITÁRIOS
@@ -457,8 +499,8 @@ function montarParametros() {
     params.append("NumeroPagina", paginaAtual);
     params.append("TamanhoPagina", tamanhoPagina.value);
     params.append("Descricao", filtroDescricao.value);
-    params.append("Ordem", "DataCadastro");
-    params.append("Direcao", "DESC");
+    params.append("Ordem", ordemAtual);
+    params.append("Direcao", direcaoAtual);
 
     if (filtroDataCadastroInicial.value) {
         params.append("DataCadastroInicial", filtroDataCadastroInicial.value);
