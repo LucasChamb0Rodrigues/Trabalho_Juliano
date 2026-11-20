@@ -345,7 +345,7 @@ function renderizarLembretes(lembretes) {
 
         tr.innerHTML = `
             <td>
-                ${lembrete.descricao}
+                ${escaparHtml(lembrete.descricao)}
             </td>
 
             <td>
@@ -540,6 +540,13 @@ function montarParametros() {
     }
 
     return params;
+}
+
+function escaparHtml(texto) {
+    const div = document.createElement("div");
+    div.textContent = texto;
+
+    return div.innerHTML;
 }
 
 function formatarData(data) {
