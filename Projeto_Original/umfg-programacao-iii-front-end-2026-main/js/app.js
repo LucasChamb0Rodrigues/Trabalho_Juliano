@@ -100,8 +100,16 @@ async function filtrarLembretes() {
 
         console.error(error);
 
+        listaLembretes.innerHTML = "";
+        mensagemVazia.textContent = "Não foi possível carregar os lembretes.";
+        mensagemVazia.classList.remove("hidden");
+
+        btnAnterior.disabled = true;
+        btnProximo.disabled = true;
+
         mostrarToast(
-            "Erro ao realizar o filtro."
+            mensagemDeErro(error, "Erro ao realizar o filtro."),
+            "erro"
         );
     }
 }
@@ -141,7 +149,8 @@ async function imprimirLembretes() {
         console.error(error);
 
         mostrarToast(
-            "Erro ao realizar o filtro."
+            mensagemDeErro(error, "Não foi possível gerar o relatório."),
+            "erro"
         );
     }
 }
@@ -182,7 +191,7 @@ async function criarLembrete() {
 
         console.error(error);
 
-        mostrarToast("Não foi possível criar o lembrete.");
+        mostrarToast(mensagemDeErro(error, "Não foi possível criar o lembrete."), "erro");
     }
 }
 
@@ -216,7 +225,8 @@ async function buscarLembrete(id) {
         console.error(error);
 
         mostrarToast(
-            "Não foi possível buscar o lembrete."
+            mensagemDeErro(error, "Não foi possível buscar o lembrete."),
+            "erro"
         );
     }
 }
@@ -264,7 +274,8 @@ async function atualizarLembrete() {
         console.error(error);
 
         mostrarToast(
-            "Não foi possível atualizar o lembrete."
+            mensagemDeErro(error, "Não foi possível atualizar o lembrete."),
+            "erro"
         );
     }
 }
@@ -307,7 +318,8 @@ async function excluirLembrete(id) {
         console.error(error);
 
         mostrarToast(
-            "Não foi possível excluir o lembrete."
+            mensagemDeErro(error, "Não foi possível excluir o lembrete."),
+            "erro"
         );
     }
 }
@@ -320,6 +332,7 @@ function renderizarLembretes(lembretes) {
     listaLembretes.innerHTML = "";
 
     if (!lembretes || lembretes.length === 0) {
+        mensagemVazia.textContent = "Nenhum lembrete encontrado.";
         mensagemVazia.classList.remove("hidden");
 
         return;
@@ -402,7 +415,10 @@ formLembrete.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     if (!descricao.value.trim()) {
-        mostrarToast("Informe uma descrição.");
+        descricao.classList.add("campo-invalido");
+        descricao.focus();
+
+        mostrarToast("Informe uma descrição.", "aviso");
 
         return;
     }
@@ -429,7 +445,12 @@ function fecharFormulario() {
     formulario.classList.add("hidden");
     formLembrete.reset();
     lembreteId.value = "";
+    descricao.classList.remove("campo-invalido");
 }
+
+descricao.addEventListener("input", () => {
+    descricao.classList.remove("campo-invalido");
+});
 
 // ========================================
 // FILTRO
@@ -533,12 +554,23 @@ function formatarData(data) {
 }
 
 
-function mostrarToast(mensagem) {
+let timeoutToast;
+
+function mostrarToast(mensagem, tipo = "sucesso") {
     const toast = document.getElementById("toast");
 
     toast.textContent = mensagem;
 
-    toast.classList.remove("hidden");
+    toast.className = `toast toast-${tipo}`;
 
-    setTimeout(() => { toast.classList.add("hidden"); }, 3000);
+    clearTimeout(timeoutToast);
+    timeoutToast = setTimeout(() => { toast.classList.add("hidden"); }, 4000);
+}
+
+function mensagemDeErro(error, mensagemPadrao) {
+    if (error instanceof TypeError) {
+        return "Não foi possível se comunicar com a API. Verifique se ela está em execução.";
+    }
+
+    return mensagemPadrao;
 }
